@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RepoFix Harness</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">RF</div>
+        <div><strong>RepoFix</strong><span>Agent Harness</span></div>
+      </div>
+      <button id="new-task-button" class="primary wide">＋ 新建修复任务</button>
+      <div class="section-label"><span>最近任务</span><button id="refresh-button" class="icon-button" title="刷新">↻</button></div>
+      <div id="session-list" class="session-list"></div>
+      <div class="sidebar-bottom">
+        <div id="system-state" class="system-state"><i></i><span>本地控制器在线</span></div>
+        <button id="settings-button" class="secondary wide">⚙ 模型配置</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <span class="eyebrow">VERIFIABLE CODING AGENT</span>
+          <h1 id="page-title">工作台</h1>
+        </div>
+        <div id="config-chip" class="config-chip">读取模型配置…</div>
+      </header>
+
+      <div id="config-warning" class="warning hidden">
+        <strong>还没有配置模型密钥。</strong>
+        <span>保存一次后将持久写入本机 RepoFix 配置，无需每次启动重新填写。</span>
+        <button id="warning-config-button">立即配置</button>
+      </div>
+
+      <section id="empty-view" class="empty-view">
+        <div class="hero-card">
+          <div class="hero-icon">⌁</div>
+          <span class="eyebrow">CONTROL PLANE</span>
+          <h2>从问题描述到可验证补丁</h2>
+          <p>选择 Git 项目或普通本地文件夹。RepoFix 会建立隔离工作区、运行 Agent、记录每个工具调用，并在干净副本中独立验证结果。</p>
+          <div class="flow">
+            <span>项目快照</span><b>→</b><span>Agent 循环</span><b>→</b><span>隔离执行</span><b>→</b><span>独立验证</span>
+          </div>
+          <button id="empty-new-button" class="primary">创建第一个任务</button>
+        </div>
+        <div class="feature-grid">
+          <article><b>01</b><h3>副作用可追踪</h3><p>SQLite 状态、JSONL 事件、工具开始与完成记录。</p></article>
+          <article><b>02</b><h3>运行环境隔离</h3><p>Docker 默认断网、非 root、资源限制和超时清理。</p></article>
+          <article><b>03</b><h3>完成条件外置</h3><p>模型不能自行宣告成功，固定命令在干净副本中复验。</p></article>
+        </div>
+      </section>
+
+      <section id="detail-view" class="detail-view hidden">
+        <div class="detail-heading">
+          <div><span id="detail-status" class="status-pill"></span><h2 id="detail-project"></h2><p id="detail-issue"></p></div>
+          <div class="actions">
+            <button id="resume-button" class="secondary">继续运行</button>
+            <button id="cancel-button" class="danger">请求取消</button>
+            <button id="cleanup-button" class="ghost">清理工作区</button>
+          </div>
+        </div>
+        <div class="metric-grid">
+          <article><span>模型</span><strong id="metric-model">—</strong></article>
+          <article><span>执行器</span><strong id="metric-executor">—</strong></article>
+          <article><span>模型轮次</span><strong id="metric-turns">0</strong></article>
+          <article><span>工具调用</span><strong id="metric-tools">0</strong></article>
+        </div>
+        <div id="error-panel" class="error-panel hidden"></div>
+        <div class="content-grid">
+          <section class="panel timeline-panel">
+            <div class="panel-title"><div><span>TRACE</span><h3>执行轨迹</h3></div><small id="event-count"></small></div>
+            <div id="event-list" class="event-list"></div>
+          </section>
+          <section class="panel patch-panel">
+            <div class="panel-title"><div><span>ARTIFACT</span><h3>候选补丁</h3></div><small id="verification-label"></small></div>
+            <pre id="patch-content">等待 Agent 产生代码改动…</pre>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="task-dialog">
+    <form id="task-form" class="modal-form">
+      <div class="modal-header"><div><span class="eyebrow">NEW SESSION</span><h2>创建修复任务</h2></div><button type="button" class="close-button" data-close="task-dialog">×</button></div>
+      <label>项目文件夹 <span>Git 项目或普通本地文件夹均可</span></label>
+      <div class="path-row"><input id="project-path" name="project_path" required placeholder="D:\projects\my-python-app"><button id="pick-folder" type="button" class="secondary">选择文件夹</button></div>
+      <div id="project-inspection" class="inspection hidden"></div>
+      <label>问题与验收目标</label>
+      <textarea name="issue" required rows="5" placeholder="描述当前错误、预期行为、必须保留的功能和边界条件"></textarea>
+      <label>验收命令 <span>每行一条，由独立验证器执行</span></label>
+      <textarea name="acceptance_commands" rows="3">python -m pytest -q</textarea>
+      <div class="form-grid">
+        <div><label>执行器</label><select name="executor"><option value="docker">Docker 隔离</option><option value="local">本机（仅可信代码）</option></select></div>
+        <div><label>最大轮次</label><input name="max_turns" type="number" min="1" max="200" value="30"></div>
+        <div><label>工具调用上限</label><input name="max_tool_calls" type="number" min="1" max="1000" value="100"></div>
+        <div><label>最长分钟数</label><input name="max_minutes" type="number" min="1" max="1440" value="30"></div>
+      </div>
+      <div class="modal-actions"><button type="button" class="ghost" data-close="task-dialog">取消</button><button id="create-task-submit" type="submit" class="primary">创建并运行</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="settings-dialog">
+    <form id="settings-form" class="modal-form narrow">
+      <div class="modal-header"><div><span class="eyebrow">PERSISTENT SETTINGS</span><h2>模型配置</h2></div><button type="button" class="close-button" data-close="settings-dialog">×</button></div>
+      <p class="modal-note">配置保存在本机 <code id="config-path"></code>。API Key 不会发送给浏览器任务容器。</p>
+      <label>API Key <span id="api-key-hint"></span></label>
+      <input name="api_key" type="password" autocomplete="off" placeholder="留空则保留已保存的密钥">
+      <label>API Base URL</label><input name="base_url" type="url" required>
+      <label>模型名称</label><input name="model" required>
+      <div class="form-grid two">
+        <div><label>请求超时（秒）</label><input name="timeout_seconds" type="number" min="5" value="120"></div>
+        <div><label>失败重试次数</label><input name="max_retries" type="number" min="0" max="10" value="2"></div>
+      </div>
+      <div class="modal-actions"><button type="button" class="ghost" data-close="settings-dialog">取消</button><button type="submit" class="primary">保存配置</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

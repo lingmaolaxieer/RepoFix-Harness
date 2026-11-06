@@ -1,0 +1,43 @@
+{
+  "generated_date": "2026-11-06",
+  "scope": "single-run real-model smoke evaluation on two synthetic Python repair tasks; not a public benchmark",
+  "provider": "DeepSeek OpenAI-compatible Chat Completions endpoint",
+  "model": "deepseek-flash",
+  "executor": "docker",
+  "attempts_per_case": 1,
+  "report": {
+    "passed": 2,
+    "total": 2,
+    "pass_rate": 1.0,
+    "total_turns": 8,
+    "total_tool_calls": 10,
+    "total_input_tokens": 12023,
+    "total_output_tokens": 681,
+    "elapsed_seconds": 38.094,
+    "cases": [
+      {
+        "id": "mean-empty-real-model",
+        "passed": true,
+        "turns": 4,
+        "tool_calls": 5,
+        "input_tokens": 6016,
+        "output_tokens": 360,
+        "changed_files": ["calculator.py"]
+      },
+      {
+        "id": "username-whitespace-real-model",
+        "passed": true,
+        "turns": 4,
+        "tool_calls": 5,
+        "input_tokens": 6007,
+        "output_tokens": 321,
+        "changed_files": ["usernames.py"]
+      }
+    ]
+  },
+  "limitations": [
+    "The task set is intentionally small and synthetic.",
+    "Each case was run once, so this report does not measure variance.",
+    "The result must not be presented as SWE-bench or general repair accuracy."
+  ]
+}

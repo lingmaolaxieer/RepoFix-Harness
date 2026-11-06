@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.uv-cache/
+.docker-test-temp/
+*.pyc
+.env
+.repofix/
+dist/
+build/
+*.egg-info/
+.idea/
+career/
+test-run-*/
+tmp/
+
